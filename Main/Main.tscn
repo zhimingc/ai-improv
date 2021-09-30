@@ -55,6 +55,7 @@ script = ExtResource( 5 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
+startTime = 5.0
 
 [node name="ClockText" type="RichTextLabel" parent="AIController/ClockPanel"]
 anchor_left = 0.5
@@ -146,6 +147,8 @@ position = Vector2( 960, 540 )
 scale = Vector2( 2, 2 )
 script = ExtResource( 8 )
 
+[connection signal="clock_start" from="AIController" to="AIController/ClockPanel" method="_on_AIController_clock_start"]
+[connection signal="timer_reset" from="AIController/ClockPanel" to="AIController" method="_on_ClockPanel_timer_reset"]
 [connection signal="pressed" from="AIController/DebugControls/Debug0" to="AIController" method="_on_debug_prompt_pressed" binds= [ 0 ]]
 [connection signal="pressed" from="AIController/DebugControls/Debug1" to="AIController" method="_on_debug_prompt_pressed" binds= [ 1 ]]
 [connection signal="pressed" from="AIController/DebugControls/Debug2" to="AIController" method="_on_debug_prompt_pressed" binds= [ 2 ]]

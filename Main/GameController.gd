@@ -1,5 +1,7 @@
 extends Control
 
+signal clock_start
+
 enum PROMPT_TYPE { EMOTION, LOCATION, OCCUPATION, RELATIONSHIP }
 
 # Short form games
@@ -11,13 +13,15 @@ export var prompt_pool_size = 5
 var promptType
 var promptTypePool = [0, 1, 2, 3]
 var requesting = [false, false]
+var currentGame = 0
 
 # tts variables
 var queueSpeak = false
 var gameTTS = ""
 var promptTTS = ""
 
-var currentGame = 0
+# timer
+var clockReset = false
 
 func _ready():
 	$HTTPRequest.connect("request_completed", self, "_on_prompt_request_completed")
@@ -45,15 +49,17 @@ func tts_speak(text):
 	$tts.speak(text)
 
 func _process(delta):
-	if Input.is_action_just_pressed("new_prompt") and promptTypePool.size() > 0 and requesting[0] == false:
-		request_prompt(promptTypePool[rand_range(0, promptTypePool.size())])
-		queueSpeak = true
+	if promptTypePool.size() > 0 and requesting[0] == false:
+		if Input.is_action_just_pressed("new_prompt") or clockReset:
+			request_prompt(promptTypePool[rand_range(0, promptTypePool.size())])
+			queueSpeak = true
 	
-	if Input.is_action_just_pressed("new_game"):
+	if Input.is_action_just_pressed("new_game") or clockReset:
 		get_rand_game()
 		queueSpeak = true
 		
 	update_tts()
+	clockReset = false
 
 func get_rand_game():
 	$ShowPanel.set_word("thinking...")
@@ -64,6 +70,7 @@ func get_rand_game():
 	requesting[1] = true
 	
 	yield(get_tree().create_timer(rand_range(0.5, 1.5)), "timeout")
+	
 	$ShowPanel.set_word(gameList[nextGame])
 	$ShowPanel.set_label("Game")
 	gameTTS = "Your next game is " + gameList[nextGame]
@@ -87,6 +94,8 @@ func update_tts():
 	if canSpeak:
 		$tts.speak(gameTTS + " and " + promptTTS)
 		queueSpeak = false
+		yield(get_tree().create_timer(5.0), "timeout")
+		emit_signal("clock_start")
 	
 func _on_debug_prompt_pressed(prompt):
 	var index = promptTypePool.find(prompt)
@@ -94,3 +103,7 @@ func _on_debug_prompt_pressed(prompt):
 		promptTypePool.append(prompt)
 	else:
 		promptTypePool.remove(index)
+
+
+func _on_ClockPanel_timer_reset():
+	clockReset = true
