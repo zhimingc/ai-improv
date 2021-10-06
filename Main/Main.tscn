@@ -1,16 +1,22 @@
-[gd_scene load_steps=10 format=2]
+[gd_scene load_steps=12 format=2]
 
 [ext_resource path="res://Basic/blue-red-pallete.png" type="Texture" id=1]
 [ext_resource path="res://ShowPanel/ShowPanel.tscn" type="PackedScene" id=2]
-[ext_resource path="res://Fonts/Scribbles-Regular.ttf" type="DynamicFontData" id=3]
+[ext_resource path="res://Fonts/DisposableDroidBB.otf" type="DynamicFontData" id=3]
 [ext_resource path="res://Basic/square_small.png" type="Texture" id=4]
 [ext_resource path="res://Panels/ClockPanel.gd" type="Script" id=5]
 [ext_resource path="res://Main/GameController.gd" type="Script" id=6]
 [ext_resource path="res://UI/debug_font.tres" type="DynamicFont" id=7]
 [ext_resource path="res://addons/godot-tts/TTS.gd" type="Script" id=8]
+[ext_resource path="res://Main/TimerBar.gd" type="Script" id=9]
 
 [sub_resource type="DynamicFont" id=1]
-size = 350
+size = 500
+use_filter = true
+font_data = ExtResource( 3 )
+
+[sub_resource type="DynamicFont" id=2]
+size = 100
 use_filter = true
 font_data = ExtResource( 3 )
 
@@ -24,12 +30,30 @@ texture = ExtResource( 1 )
 current = true
 
 [node name="AIController" type="Control" parent="."]
-margin_left = -480.0
-margin_top = -270.0
-margin_right = 1440.0
-margin_bottom = 810.0
-rect_scale = Vector2( 0.5, 0.5 )
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -720.0
+margin_top = -400.0
+margin_right = 1200.0
+margin_bottom = 680.0
+rect_scale = Vector2( 0.75, 0.75 )
 script = ExtResource( 6 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="TimerBar" type="TextureRect" parent="AIController"]
+self_modulate = Color( 0.0777, 0.37, 0.0825717, 0.92549 )
+margin_top = 1075.0
+margin_right = 50.0
+margin_bottom = 1125.0
+grow_vertical = 0
+rect_scale = Vector2( 38.5, -21.5 )
+texture = ExtResource( 4 )
+expand = true
+script = ExtResource( 9 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -43,7 +67,7 @@ PanelLabel = "Prompt"
 PanelContent = "Diamond"
 
 [node name="ClockPanel" type="TextureRect" parent="AIController"]
-self_modulate = Color( 0, 0.372549, 0.45098, 1 )
+self_modulate = Color( 0.2, 0.2, 0.2, 0.313726 )
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -55,17 +79,38 @@ script = ExtResource( 5 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
+debugTimer = true
+totalTime = 900.0
 startTime = 5.0
 
 [node name="ClockText" type="RichTextLabel" parent="AIController/ClockPanel"]
 anchor_left = 0.5
+anchor_top = 0.5
 anchor_right = 0.5
-margin_left = -500.0
-margin_right = 500.0
-margin_bottom = 400.0
+anchor_bottom = 0.5
+margin_left = -800.0
+margin_top = -250.0
+margin_right = 800.0
+margin_bottom = 250.0
 size_flags_vertical = 4
 custom_fonts/normal_font = SubResource( 1 )
 custom_colors/default_color = Color( 0.933333, 0.607843, 0, 1 )
+bbcode_enabled = true
+bbcode_text = "[center]01:52"
+text = "01:52"
+fit_content_height = true
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="TotalTime" type="RichTextLabel" parent="AIController/ClockPanel"]
+anchor_top = 1.0
+anchor_bottom = 1.0
+margin_top = -125.0
+margin_right = 300.0
+size_flags_vertical = 4
+custom_fonts/normal_font = SubResource( 2 )
+custom_colors/default_color = Color( 1, 0.27, 0.27, 1 )
 bbcode_enabled = true
 bbcode_text = "[center]01:52"
 text = "01:52"
@@ -83,11 +128,15 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Debug0" type="CheckBox" parent="AIController/DebugControls"]
+[node name="PromptControls" type="Control" parent="AIController/DebugControls"]
+margin_right = 40.0
+margin_bottom = 40.0
+
+[node name="Debug0" type="CheckBox" parent="AIController/DebugControls/PromptControls"]
 margin_left = 1000.0
-margin_top = 36.0
+margin_top = 16.0
 margin_right = 1115.0
-margin_bottom = 78.0
+margin_bottom = 58.0
 rect_scale = Vector2( 1.5, 1.5 )
 focus_mode = 0
 custom_fonts/font = ExtResource( 7 )
@@ -99,11 +148,11 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Debug1" type="CheckBox" parent="AIController/DebugControls"]
+[node name="Debug1" type="CheckBox" parent="AIController/DebugControls/PromptControls"]
 margin_left = 1172.5
-margin_top = 40.0
+margin_top = 16.0
 margin_right = 1287.5
-margin_bottom = 82.0
+margin_bottom = 58.0
 rect_scale = Vector2( 1.5, 1.5 )
 focus_mode = 0
 custom_fonts/font = ExtResource( 7 )
@@ -115,11 +164,11 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Debug2" type="CheckBox" parent="AIController/DebugControls"]
+[node name="Debug2" type="CheckBox" parent="AIController/DebugControls/PromptControls"]
 margin_left = 1345.0
-margin_top = 40.0
+margin_top = 16.0
 margin_right = 1480.0
-margin_bottom = 82.0
+margin_bottom = 58.0
 rect_scale = Vector2( 1.5, 1.5 )
 focus_mode = 0
 custom_fonts/font = ExtResource( 7 )
@@ -128,11 +177,11 @@ pressed = true
 enabled_focus_mode = 0
 text = "Occupation"
 
-[node name="Debug3" type="CheckBox" parent="AIController/DebugControls"]
+[node name="Debug3" type="CheckBox" parent="AIController/DebugControls/PromptControls"]
 margin_left = 1547.5
-margin_top = 40.0
+margin_top = 16.0
 margin_right = 1698.5
-margin_bottom = 82.0
+margin_bottom = 58.0
 rect_scale = Vector2( 1.5, 1.5 )
 focus_mode = 0
 custom_fonts/font = ExtResource( 7 )
@@ -140,6 +189,29 @@ custom_colors/font_color = Color( 1, 1, 1, 1 )
 pressed = true
 enabled_focus_mode = 0
 text = "Relationship"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Debug4" type="CheckBox" parent="AIController/DebugControls/PromptControls"]
+margin_left = 1774.0
+margin_top = 16.0
+margin_right = 1925.0
+margin_bottom = 58.0
+rect_scale = Vector2( 1.5, 1.5 )
+focus_mode = 0
+custom_fonts/font = ExtResource( 7 )
+custom_colors/font_color = Color( 1, 1, 1, 1 )
+pressed = true
+enabled_focus_mode = 0
+text = "Word"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="ClockControls" type="Control" parent="AIController/DebugControls"]
+margin_right = 40.0
+margin_bottom = 40.0
 
 [node name="tts" type="Node2D" parent="AIController"]
 pause_mode = 2
@@ -148,8 +220,11 @@ scale = Vector2( 2, 2 )
 script = ExtResource( 8 )
 
 [connection signal="clock_start" from="AIController" to="AIController/ClockPanel" method="_on_AIController_clock_start"]
+[connection signal="show_over" from="AIController/ClockPanel" to="AIController" method="_on_ClockPanel_show_over"]
+[connection signal="timer_ending" from="AIController/ClockPanel" to="AIController" method="_on_ClockPanel_timer_ending"]
 [connection signal="timer_reset" from="AIController/ClockPanel" to="AIController" method="_on_ClockPanel_timer_reset"]
-[connection signal="pressed" from="AIController/DebugControls/Debug0" to="AIController" method="_on_debug_prompt_pressed" binds= [ 0 ]]
-[connection signal="pressed" from="AIController/DebugControls/Debug1" to="AIController" method="_on_debug_prompt_pressed" binds= [ 1 ]]
-[connection signal="pressed" from="AIController/DebugControls/Debug2" to="AIController" method="_on_debug_prompt_pressed" binds= [ 2 ]]
-[connection signal="pressed" from="AIController/DebugControls/Debug3" to="AIController" method="_on_debug_prompt_pressed" binds= [ 3 ]]
+[connection signal="pressed" from="AIController/DebugControls/PromptControls/Debug0" to="AIController" method="_on_debug_prompt_pressed" binds= [ 0 ]]
+[connection signal="pressed" from="AIController/DebugControls/PromptControls/Debug1" to="AIController" method="_on_debug_prompt_pressed" binds= [ 1 ]]
+[connection signal="pressed" from="AIController/DebugControls/PromptControls/Debug2" to="AIController" method="_on_debug_prompt_pressed" binds= [ 2 ]]
+[connection signal="pressed" from="AIController/DebugControls/PromptControls/Debug3" to="AIController" method="_on_debug_prompt_pressed" binds= [ 3 ]]
+[connection signal="pressed" from="AIController/DebugControls/PromptControls/Debug4" to="AIController" method="_on_debug_prompt_pressed" binds= [ 4 ]]

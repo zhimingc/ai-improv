@@ -1,0 +1,100 @@
+Shoemaker
+Cartoonist
+Translator
+Pickpocket
+Graphic Artist
+Sheepshearer
+Dressmaker
+Saxophonist
+Librarian
+Wedding Planner
+Singer
+Detective
+Tailor
+Bureaucrat
+Florist
+Butcher
+Pilot
+Teacher
+Illustrator
+Firefighter
+Guitarist
+Composer
+Actor
+Locksmith
+Stunt Double
+Lawyer
+Dentist
+Writer
+Interpreter
+Magician
+Guide
+Undertaker
+Innkeeper
+Paramedic
+Goldsmith
+Salesperson
+Engineer
+Matador
+Herald
+Mathematician
+Burglar
+Explorer
+Chicken Sexer
+Governor
+Builder
+Dictator
+Cab Driver
+Jockey
+Pianist
+Personal Trainer
+Farmer
+Photographer
+Poet
+Criminal
+Jailer
+Executioner
+Mayor
+Painter
+Chef
+Banker
+Magistrate
+Judge
+Scientist
+Fashion Designer
+Artist
+Radiologist
+Jeweler
+Lumberjack
+Ventriloquist
+Ornithologist
+Swimmer
+Astronaut
+Police Officer
+Boatbuilder
+Diplomat
+Choreographer
+Truck Driver
+Surgeon
+Chief of Police
+Guru
+Priest
+Beekeeper
+Miner
+Zookeeper
+Pharmacist
+Clown
+Rat Catcher
+Construction Worker
+Missionary
+Entrepreneur
+Courier
+Bricklayer
+Spy
+Exotic Dancer
+DJ
+Model
+Screenwriter
+Deputy
+Shop Assistant
+Ninja
