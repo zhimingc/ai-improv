@@ -79,9 +79,7 @@ script = ExtResource( 5 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
-debugTimer = true
-totalTime = 900.0
-startTime = 5.0
+totalTime = 25.0
 
 [node name="ClockText" type="RichTextLabel" parent="AIController/ClockPanel"]
 anchor_left = 0.5
