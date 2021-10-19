@@ -12,6 +12,7 @@ export var warningTime = 10.0
 export var timeRange = [Vector2(60.0, 120.0), Vector2(180.0, 240.0)]
 
 var timerBarObj
+var currentClockObj
 var currentTime = 0.0
 var clockActive = false
 var giveWarning = false
@@ -43,8 +44,15 @@ func _process(delta):
 			giveWarning = false			
 			emit_signal("timer_ending")
 
-		$ClockText.bbcode_text = "[center]" + String(currentTime/60).pad_decimals(0) + ":" + String(floor(fmod(currentTime, 60.0))).pad_decimals(0)
+		currentClockObj.bbcode_text = "[center]" + String(currentTime/60).pad_decimals(0) + ":" + String(floor(fmod(currentTime, 60.0))).pad_decimals(0)
 		$TotalTime.bbcode_text = "[center]" + String(totalTime/60).pad_decimals(0) + ":" + String(floor(fmod(totalTime, 60.0))).pad_decimals(0)
+
+func set_clockObj(obj):
+	currentClockObj = obj
+
+func set_visible(vis):
+	$ClockText.visible = vis
+	$TotalTime.visible = vis
 
 func set_manual_timer(time):
 	currentTime = time	

@@ -4,7 +4,10 @@ signal clock_start
 
 enum PACE { SLOW, FAST, FLEXIBLE }
 enum PROMPT_TYPE { EMOTION = 0, LOCATION, OCCUPATION, RELATIONSHIP, WORD }
-enum GAMESTATE { PRE_SHOW, IN_GAME, POST_GAME, SELECTION, PRE_GAME, POST_SHOW }
+enum GAMESTATE { 
+				START_BUTTON, PRE_SHOW, FAKE_GAME, TAKEOVER, 
+				IN_GAME, POST_GAME, SELECTION, PRE_GAME, POST_SHOW 
+				}
 
 class Game:	
 	var GAME_REQ = ["a bell", "chairs"]
@@ -51,6 +54,9 @@ var speakQueue = []
 # timer
 var clockReset = false
 
+# narrative
+var mockSpeech = [ "That was really funny ha, ha, ha, ha, ha.", "Magnificent, bravo, my favourite part was when it ended.", "Lol, Lmao, Rofl, WtfBBQ"]
+
 func init_games():
 	games.append(Game.new("Toaster", PACE.SLOW, [0, 1]))
 	games.append(Game.new("Forward, Reverse", PACE.SLOW, [0]))
@@ -80,7 +86,7 @@ func _ready():
 	randomize()
 	$HTTPRequest.connect("request_completed", self, "_on_prompt_request_completed")
 	init_games()
-	set_state(GAMESTATE.PRE_SHOW)
+	set_state(GAMESTATE.START_BUTTON)
 
 func _on_prompt_request_completed(result, response_code, headers, body):
 	var xml = XMLParser.new()
@@ -147,6 +153,11 @@ func set_game_texts(label, words):
 	label.set_word(words[0])
 	label.set_label(words[1])
 
+func clear_screen():
+	set_game_texts($ShowPanel, ["", ""])
+	set_game_texts($ShowPanel2, ["", ""])
+	$ClockPanel.visible = false	
+
 func tts_speak(text):
 	$tts.speak(text)
 
@@ -161,7 +172,7 @@ func update_debug():
 			request_prompt(promptTypePool[rand_range(0, promptTypePool.size())])
 			give_prompt()
 
-	if Input.is_action_just_pressed("new_game"):
+	if Input.is_action_just_pressed("skip_timer"):
 		# get_rand_game()
 		$ClockPanel.zero_timer()
 	
@@ -182,22 +193,52 @@ func update_state():
 func set_state(newState):
 	# on exit
 	match currentState:
+		GAMESTATE.START_BUTTON:
+			$StartMenu.visible = false
+			$TimerBar.visible = true
+			$ShowPanel.visible = true
+			$ShowPanel2.visible = true
+			$ClockPanel.visible = true	
+			$ClockPanel.set_visible(false)
 		GAMESTATE.PRE_SHOW:			
 			pass
-		GAMESTATE.PRE_GAME:
+		GAMESTATE.FAKE_GAME:
 			pass
-		GAMESTATE.IN_GAME:
-			pass
-		GAMESTATE.POST_GAME:
+		GAMESTATE.TAKEOVER:
+			$ClockPanel.set_clockObj($ClockPanel/ClockText)	
+			$FakeSequence.visible = false
+			$distory_overlay.visible = false			
+			$ClockPanel.set_visible(true)		
 			pass
 	currentState = newState
 	# on enter
 	match currentState:
+		GAMESTATE.START_BUTTON:
+			$StartMenu.visible = true
+			clear_screen()
+			$TimerBar.visible = false
+			$ClockPanel.set_clockObj($FakeSequence/FakeClock)
+			pass
 		GAMESTATE.PRE_SHOW:
-			speakQueue.append("The show will start in 5. 4.... 3. 2.... 1.")
+			$FakeSequence.visible = true
+			# speakQueue.append("The show will start in 5. 4.... 3. 2.... 1.")
 			set_game_texts($ShowPanel, ["", ""])
 			set_game_texts($ShowPanel2, ["", ""])
 			$ClockPanel.set_manual_timer(7.0)
+			pass
+		GAMESTATE.FAKE_GAME:
+			$ClockPanel.set_manual_timer(60.0 * 8)
+			pass
+		GAMESTATE.TAKEOVER:
+			$distory_overlay.visible = true
+			$FakeSequence/AIFace.visible = true
+			$FakeSequence/FakeClock.visible = false
+			speakQueue.append("I'm sorry, I'm afraid... this is bad improv.")
+			speakQueue.append("The doors are now locked. If you follow my instructions precisely, they will unlock at the end of the show.")
+			speakQueue.append("Are you ready to play with me?... ...")
+			speakQueue.append("... ...")
+			speakQueue.append("GET ON WITH IT")
+			speakQueue.append("@_on_ClockPanel_timer_reset")
 			pass
 		GAMESTATE.PRE_GAME:
 			get_rand_game()
@@ -211,7 +252,7 @@ func set_state(newState):
 			give_prompt()			
 			pass
 		GAMESTATE.POST_GAME:
-			speakQueue.append("SCEEENE!... That was really funny ha, ha, ha, ha, ha.")	
+			speakQueue.append("SCEEENE!... " + mockSpeech[rand_range(0, mockSpeech.size())])	
 			set_game_texts($ShowPanel, ["SCENE", ""])
 			set_game_texts($ShowPanel2, ["SCENE", ""])
 			$ClockPanel.set_manual_timer(10.0)			
@@ -220,7 +261,13 @@ func set_state(newState):
 func _on_ClockPanel_timer_reset():
 	match currentState:
 		GAMESTATE.PRE_SHOW:
-			set_state(GAMESTATE.PRE_GAME)	
+			set_state(GAMESTATE.FAKE_GAME)	
+			pass
+		GAMESTATE.FAKE_GAME:
+			set_state(GAMESTATE.TAKEOVER)
+			pass
+		GAMESTATE.TAKEOVER:
+			set_state(GAMESTATE.PRE_GAME)			
 			pass
 		GAMESTATE.PRE_GAME:
 			set_state(GAMESTATE.IN_GAME)
@@ -251,7 +298,10 @@ func request_prompt(type):
 func update_tts():
 	if not $tts._get_is_speaking() and speakQueue.size() > 0:
 		var toSpeak = speakQueue[0]
-		tts_speak(toSpeak)
+		if toSpeak.begins_with("@"):
+			call(toSpeak.right(1))
+		else:
+			tts_speak(toSpeak)
 		speakQueue.remove(0)
 	
 func _on_debug_prompt_pressed(prompt):
