@@ -6,22 +6,38 @@ signal show_over
 
 export var debugTimer = false
 export var debugTime = 15.0
-export var totalTime = 300.0
+export var totalTime = 30.0
 export var increasePace = 6.0
-export var warningTime = 10.0
-export var timeRange = [Vector2(60.0, 120.0), Vector2(180.0, 240.0)]
+export var warningTime = 15.0
 
+var controller : Controller
+var timeRange
+var timeElapsed = 0.0
 var timerBarObj
 var currentClockObj
 var currentTime = 0.0
 var clockActive = false
 var giveWarning = false
+var pacings = []
+var currentPacing
 
 func _ready():
 	totalTime *= 60
 	increasePace *= 60
 	currentTime = 10
-	timerBarObj = get_parent().get_node("TimerBar")
+	controller = get_parent()	
+	timerBarObj = controller.get_node("TimerBar")
+	timeRange = controller.timeRange
+	init_pace_shift_times()
+	currentPacing = pacings.pop_front()
+	
+func init_pace_shift_times():
+	pacings.append_array(controller.pacing)
+	var accTime = 0.0
+	for pace in pacings:
+		var time = totalTime * (pace.timePerc / 100.0)
+		accTime += time
+		pace.timeShift = accTime
 
 func _process(delta):
 	if (clockActive):
@@ -37,6 +53,8 @@ func _process(delta):
 			return
 		else:
 			totalTime -= delta
+			timeElapsed += delta
+			check_pace_shift()
 			
 		if currentTime <= 0.0:
 			reset_timer()
@@ -44,8 +62,18 @@ func _process(delta):
 			giveWarning = false			
 			emit_signal("timer_ending")
 
-		currentClockObj.bbcode_text = "[center]" + String(currentTime/60).pad_decimals(0) + ":" + String(floor(fmod(currentTime, 60.0))).pad_decimals(0)
-		$TotalTime.bbcode_text = "[center]" + String(totalTime/60).pad_decimals(0) + ":" + String(floor(fmod(totalTime, 60.0))).pad_decimals(0)
+		currentClockObj.bbcode_text = "[center]" + String(currentTime/60).pad_decimals(0) + ":" + get_padded_time(floor(fmod(currentTime, 60.0)))
+		$TotalTime.bbcode_text = "[center]" + String(totalTime/60).pad_decimals(0) + ":" + get_padded_time(floor(fmod(totalTime, 60.0)))
+
+func check_pace_shift():
+	if timeElapsed >= currentPacing.timeShift:
+		currentPacing = pacings.pop_front()
+		controller.set_pace_state(currentPacing.pace)		
+
+func get_padded_time(time):
+	if time < 10:
+		return "0" + String(time).pad_decimals(0)
+	return String(time).pad_decimals(0)	
 
 func set_clockObj(obj):
 	currentClockObj = obj
@@ -60,13 +88,9 @@ func set_manual_timer(time):
 	clockActive = true
 
 func set_new_timer(game):
-	match game.gamePace:
-		0:
-			currentTime = rand_range(timeRange[0].x, timeRange[0].y)
-		1:
-			currentTime = rand_range(timeRange[1].x, timeRange[1].y)
-		2:
-			currentTime = rand_range(timeRange[0].x, timeRange[1].y)
+	var curTimeRange = get_timeRange(game.gamePace)
+	currentTime = rand_range(curTimeRange.x, curTimeRange.y)
+	currentTime *= 60
 	currentTime = stepify(currentTime, 5)
 	clockActive = false
 	giveWarning = true
@@ -76,6 +100,19 @@ func set_new_timer(game):
 		clockActive = true
 	
 	timerBarObj.set_new_time(currentTime)
+	
+func get_timeRange(pace):
+	match pace:
+		0: # fast
+			return Vector2(timeRange[0].x, timeRange[0].y)
+		1: # mid
+			return Vector2(timeRange[1].x, timeRange[1].y)
+		2: # fast
+			return Vector2(timeRange[2].x, timeRange[2].y)
+		3: # flex fast
+			return Vector2(timeRange[0].x, timeRange[1].x)
+		4: # flex slow
+			return Vector2(timeRange[1].y, timeRange[2].y)
 	
 func zero_timer():
 	currentTime = 0.0
