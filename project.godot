@@ -24,6 +24,10 @@ config/name="improv-ai-master"
 run/main_scene="res://Main/Main.tscn"
 config/icon="res://icon.png"
 
+[autoload]
+
+gm="*res://AutoLoad/GM.gd"
+
 [display]
 
 window/size/width=960

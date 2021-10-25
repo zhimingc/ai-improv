@@ -18,10 +18,18 @@ func update_pacing_debug():
 		return
 
 	var gamePace = ""
-	if controller.currentGame:
-		var timeRange = controller.get_node("ClockPanel").get_timeRange(controller.currentGame.gamePace)	
-		gamePace = "Pace: " + str(Controller.PACE.keys()[controller.currentGame.gamePace])
-		gamePace += "\nMin: " + str(timeRange.x) + "-" + str(timeRange.y)
+#	if controller.currentGame:
+#		gamePace = "Pace: " + str(Controller.PACE.keys()[controller.currentGame.gamePace])
+#		gamePace += "\nMin: " + str(timeRange.x) + "-" + str(timeRange.y)
 	
-	$PacingDebug/ShowPace.text = "Show Pace:\n" + str(Controller.SHOWPACE.keys()[controller.showPace])
-	$PacingDebug/GamePace.text = gamePace
+	var timeRange = controller.get_node("ClockPanel").get_timeRange(controller.showPace)	
+	$PacingDebug/ShowPace.text = "Show Pace:\n" + str(Controller.PACE.keys()[controller.showPace]) + "\nMin:\n" + str(timeRange.x) + "-" + str(timeRange.y)
+	$PacingDebug/GamePace.text = ""
+
+	match controller.showPace:
+		Controller.PACE.FAST:
+			$PacingDebug/ShowPace.modulate = Color.green
+		Controller.PACE.MID:
+			$PacingDebug/ShowPace.modulate = Color.aqua
+		Controller.PACE.SLOW:
+			$PacingDebug/ShowPace.modulate = Color.orange

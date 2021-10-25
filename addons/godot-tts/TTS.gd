@@ -141,7 +141,11 @@ func speak(text, interrupt := true):
 			code += """
 				window.speechSynthesis.cancel()
 			"""
-		code += "window.speechSynthesis.speak(utterance)"
+		code += """
+			voices = utterance.getVoices()
+			utterance.voice = voices[0]
+			window.speechSynthesis.speak(utterance)
+		"""
 		JavaScript.eval(code)
 	else:
 		print_debug("%s: %s" % [text, interrupt])

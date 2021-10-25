@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=2]
+[gd_scene load_steps=25 format=2]
 
 [ext_resource path="res://Basic/blue-red-pallete.png" type="Texture" id=1]
 [ext_resource path="res://ShowPanel/ShowPanel.tscn" type="PackedScene" id=2]
@@ -13,6 +13,8 @@
 [ext_resource path="res://icon.png" type="Texture" id=11]
 [ext_resource path="res://Fonts/Bungee-Regular.ttf" type="DynamicFontData" id=12]
 [ext_resource path="res://Main/DebugControls.gd" type="Script" id=13]
+[ext_resource path="res://Toolbox/MainCamera.gd" type="Script" id=14]
+[ext_resource path="res://Toolbox/SoundEffects.gd" type="Script" id=15]
 
 [sub_resource type="DynamicFont" id=1]
 size = 500
@@ -28,7 +30,7 @@ outline_color = Color( 0, 0, 0, 1 )
 use_filter = true
 font_data = ExtResource( 3 )
 
-[sub_resource type="DynamicFont" id=9]
+[sub_resource type="DynamicFont" id=3]
 size = 48
 outline_size = 4
 outline_color = Color( 0, 0, 0, 1 )
@@ -36,26 +38,26 @@ use_mipmaps = true
 use_filter = true
 font_data = ExtResource( 12 )
 
-[sub_resource type="DynamicFont" id=3]
+[sub_resource type="DynamicFont" id=4]
 size = 72
 use_mipmaps = true
 use_filter = true
 font_data = ExtResource( 3 )
 
-[sub_resource type="DynamicFont" id=4]
+[sub_resource type="DynamicFont" id=5]
 size = 256
 font_data = ExtResource( 3 )
 
-[sub_resource type="DynamicFont" id=5]
+[sub_resource type="DynamicFont" id=6]
 size = 50
 font_data = ExtResource( 10 )
 
-[sub_resource type="DynamicFont" id=6]
+[sub_resource type="DynamicFont" id=7]
 size = 500
 use_filter = true
 font_data = ExtResource( 3 )
 
-[sub_resource type="Shader" id=7]
+[sub_resource type="Shader" id=8]
 code = "/*
 Shader from Godot Shaders - the free shader library.
 godotshaders.com/shader/VHS-and-CRT-monitor-effect
@@ -286,8 +288,8 @@ void fragment()
 	COLOR = text;
 }"
 
-[sub_resource type="ShaderMaterial" id=8]
-shader = SubResource( 7 )
+[sub_resource type="ShaderMaterial" id=9]
+shader = SubResource( 8 )
 shader_param/overlay = true
 shader_param/scanlines_opacity = 0.4
 shader_param/scanlines_width = 0.25
@@ -318,6 +320,7 @@ texture = ExtResource( 1 )
 
 [node name="Camera2D" type="Camera2D" parent="."]
 current = true
+script = ExtResource( 14 )
 
 [node name="AIController" type="Control" parent="."]
 anchor_left = 0.5
@@ -333,6 +336,7 @@ script = ExtResource( 6 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
+fast_mode = true
 
 [node name="TimerBar" type="TextureRect" parent="AIController"]
 self_modulate = Color( 0.0777, 0.37, 0.0825717, 0.92549 )
@@ -368,7 +372,8 @@ script = ExtResource( 5 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
-totalTime = 20.0
+debugTime = 20.0
+totalTime = 50.0
 
 [node name="ClockText" type="RichTextLabel" parent="AIController/ClockPanel"]
 anchor_left = 0.5
@@ -409,6 +414,7 @@ __meta__ = {
 [node name="HTTPRequest" type="HTTPRequest" parent="AIController"]
 
 [node name="DebugControls" type="Control" parent="AIController"]
+visible = false
 margin_right = 40.0
 margin_bottom = 40.0
 script = ExtResource( 13 )
@@ -510,22 +516,25 @@ __meta__ = {
 
 [node name="ShowPace" type="Label" parent="AIController/DebugControls/PacingDebug"]
 margin_left = 50.0
-margin_top = 832.0
+margin_top = 700.0
 margin_right = 405.0
-margin_bottom = 933.0
-custom_fonts/font = SubResource( 9 )
+margin_bottom = 905.0
+custom_fonts/font = SubResource( 3 )
 text = "Show Pace: 
-FAST"
+FAST
+Min:
+1-2"
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="GamePace" type="Label" parent="AIController/DebugControls/PacingDebug"]
+visible = false
 margin_left = 50.0
 margin_top = 375.0
 margin_right = 661.0
 margin_bottom = 476.0
-custom_fonts/font = SubResource( 9 )
+custom_fonts/font = SubResource( 3 )
 text = "Pace: FAST
 Min: 1-2"
 __meta__ = {
@@ -560,7 +569,7 @@ margin_left = -760.0
 margin_top = -465.0
 margin_right = 40.0
 margin_bottom = -302.0
-custom_fonts/font = SubResource( 3 )
+custom_fonts/font = SubResource( 4 )
 text = "Strangers In-Sync
 Presents"
 align = 1
@@ -578,7 +587,7 @@ margin_left = -760.0
 margin_top = -265.0
 margin_right = 40.0
 margin_bottom = 509.0
-custom_fonts/font = SubResource( 4 )
+custom_fonts/font = SubResource( 5 )
 text = "Love
 Improv
 Robots"
@@ -609,7 +618,7 @@ margin_left = 465.0
 margin_top = -180.0
 margin_right = 865.0
 margin_bottom = -80.0
-custom_fonts/font = SubResource( 5 )
+custom_fonts/font = SubResource( 6 )
 text = "Start Show"
 __meta__ = {
 "_edit_use_anchors_": false
@@ -630,7 +639,7 @@ margin_top = -250.5
 margin_right = 800.0
 margin_bottom = 250.5
 size_flags_vertical = 4
-custom_fonts/normal_font = SubResource( 6 )
+custom_fonts/normal_font = SubResource( 7 )
 custom_colors/default_color = Color( 0.933333, 0.607843, 0, 1 )
 bbcode_enabled = true
 bbcode_text = "[center]01:52"
@@ -655,7 +664,7 @@ expand = true
 
 [node name="distory_overlay" type="ColorRect" parent="AIController"]
 visible = false
-material = SubResource( 8 )
+material = SubResource( 9 )
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
@@ -668,6 +677,9 @@ mouse_filter = 2
 __meta__ = {
 "_edit_use_anchors_": false
 }
+
+[node name="SFX" type="AudioStreamPlayer" parent="."]
+script = ExtResource( 15 )
 
 [connection signal="clock_start" from="AIController" to="AIController/ClockPanel" method="_on_AIController_clock_start"]
 [connection signal="show_over" from="AIController/ClockPanel" to="AIController" method="_on_ClockPanel_show_over"]

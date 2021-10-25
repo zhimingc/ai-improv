@@ -87,8 +87,8 @@ func set_manual_timer(time):
 	timerBarObj.set_new_time(currentTime)
 	clockActive = true
 
-func set_new_timer(game):
-	var curTimeRange = get_timeRange(game.gamePace)
+func set_new_timer(pace):
+	var curTimeRange = get_timeRange(pace)
 	currentTime = rand_range(curTimeRange.x, curTimeRange.y)
 	currentTime *= 60
 	currentTime = stepify(currentTime, 5)
@@ -100,6 +100,10 @@ func set_new_timer(game):
 		clockActive = true
 	
 	timerBarObj.set_new_time(currentTime)
+
+func get_time_left():
+	var timeLeft = [floor(currentTime/60), floor(fmod(currentTime, 60.0))]
+	return timeLeft
 	
 func get_timeRange(pace):
 	match pace:
@@ -109,13 +113,14 @@ func get_timeRange(pace):
 			return Vector2(timeRange[1].x, timeRange[1].y)
 		2: # fast
 			return Vector2(timeRange[2].x, timeRange[2].y)
-		3: # flex fast
-			return Vector2(timeRange[0].x, timeRange[1].x)
+		3: # v fast
+			return Vector2(timeRange[3].x, timeRange[3].x)
 		4: # flex slow
 			return Vector2(timeRange[1].y, timeRange[2].y)
 	
 func zero_timer():
 	currentTime = 0.0
+	clockActive = true
 	
 func reset_timer():
 	clockActive = false	
