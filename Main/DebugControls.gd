@@ -10,6 +10,7 @@ func _ready():
 func _process(delta):
 	if Input.is_action_just_pressed("toggleDebug"):
 		visible = !visible
+		controller.get_node("ClockPanel/TotalTime").visible = visible
 
 	update_pacing_debug()
 

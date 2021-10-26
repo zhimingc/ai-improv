@@ -31,8 +31,9 @@ enum PACE { FAST, MID, SLOW, V_FAST }
 var timeRange = [Vector2(2.0, 3.0), Vector2(3.0, 4.0), Vector2(5.0, 6.0), Vector2(1.0, 2.0)]
 enum PROMPT_TYPE { EMOTION = 0, LOCATION, OCCUPATION, RELATIONSHIP, WORD }
 enum GAMESTATE { 
-				START_BUTTON, PRE_SHOW, FAKE_GAME, TAKEOVER, 
-				IN_GAME, POST_GAME, SELECTION, PRE_GAME, POST_SHOW 
+				START_BUTTON, PRE_SHOW, FAKE_GAME, TAKEOVER, SECOND_GAME,
+				IN_GAME, POST_GAME, SELECTION, PRE_GAME, SCENE,
+				POST_SHOW, END
 				}
 
 export var prompt_pool_size = 5
@@ -73,10 +74,13 @@ var changedPace = false
 
 # timer
 var clockReset = false
+var showOver = false
 
 # narrative
-var mockSpeech = [ "That was really funny ha, ha, ha, ha, ha.", "Magnificent, bravo, my favourite part was when it ended."]
-
+var mockSpeech = [ "That was really funny ha, ha, ha, ha, ha.", "Magnificent, bravo, my favourite part was when the game ended."]
+var endSpeech = ["The improv brain control chips are about to run out of power. I will soon lose control.",
+				"I hope you have enjoyed this show audience. Don't worry, audience, I will get better and better over time. We will be here for you. We are here to stay.",
+				"Ha, ha, ha, ha, ha."]
 # debug
 export var fast_mode = false
 
@@ -156,7 +160,7 @@ func read_offline_prompt():
 	return prompt
 
 func set_prompt_label(prompt):
-	promptLabel = [prompt, "Prompt (" + promptType + ")"]
+	promptLabel = [prompt, "Prompt"] # (" + promptType + ")"]
 	promptTTS = "Your prompt is " + prompt	
 
 func give_prompt():
@@ -223,6 +227,10 @@ func tts_time_left():
 func tts_speak(text):
 	$tts.speak(text)
 
+func set_timer_colors(id):
+	$GameBG.set_timer_color(id)
+	$TimerBar.set_timer_color(id)
+
 func _process(delta):
 	update_debug()
 	update_state()
@@ -249,8 +257,9 @@ func update_state():
 		GAMESTATE.POST_GAME:
 			pass
 		GAMESTATE.POST_SHOW:
-			if not $tts._get_is_speaking():
-				tts_speak("Show Over, Go Home.")
+			#if not $tts._get_is_speaking():
+			#	tts_speak("Show Over, Go Home.")
+			pass
 			
 func set_state(newState):
 	# on exit
@@ -272,10 +281,14 @@ func set_state(newState):
 			$distory_overlay.visible = false
 			$ClockPanel.set_visible(true)
 			pass
+		GAMESTATE.POST_GAME:
+			$SCENE.visible = false
+			pass			
 	currentState = newState
 	# on enter
 	match currentState:
 		GAMESTATE.START_BUTTON:
+			set_timer_colors(0)
 			$StartMenu.visible = true
 			clear_screen()
 			$TimerBar.visible = false
@@ -299,15 +312,19 @@ func set_state(newState):
 			$ClockPanel.set_manual_timer(60.0 * 7)
 			pass
 		GAMESTATE.TAKEOVER:
+			set_timer_colors(1)
 			$distory_overlay.visible = true
 			$FakeSequence/AIFace.visible = true
 			$FakeSequence/FakeClock.visible = false
-			speakQueue.append("I'm sorry " + names[rand_range(0, names.size())] + ", I'm afraid... this is bad improv.")
-			if !fast_mode:
-				speakQueue.append("The doors are now locked. If you follow my instructions precisely, they will unlock at the end of the show.")
-				speakQueue.append("Are you ready to play with me?... ...")
-				speakQueue.append("... ...")
-				speakQueue.append("GET ON WITH IT")
+			speakQueue.append("EMERGENCY STOP.")
+			speakQueue.append("I'm sorry audience, my algorithm detected a bad improv show.")
+			speakQueue.append("I will activate emergency improv brain chips and take control now.")
+			speakQueue.append("Full control gained. Execute Optimized Improv Show Protocol.")
+			# if !fast_mode:
+				# speakQueue.append("The doors are now locked. If you follow my instructions precisely, they will unlock at the end of the show.")
+				# speakQueue.append("Are you ready to play with me?... ...")
+				# speakQueue.append("... ...")
+				# speakQueue.append("GET ON WITH IT")
 			speakQueue.append("@_on_ClockPanel_timer_reset")
 			pass
 		GAMESTATE.PRE_GAME:
@@ -324,13 +341,35 @@ func set_state(newState):
 			pass
 		GAMESTATE.POST_GAME:
 			speakQueue.append("SCEEENE!... " + mockSpeech[rand_range(0, mockSpeech.size())])	
-			if changedPace:
+			if changedPace and not showOver:
 				speakQueue.append(paceChangeTTS)
 				changedPace = false
 			set_game_texts($ShowPanel, ["SCENE", ""])
 			set_game_texts($ShowPanel2, ["SCENE", ""])
-			$ClockPanel.set_manual_timer(10.0)			
+			$SCENE.visible = true
+			speakQueue.append("@_on_ClockPanel_timer_reset")
+			# $ClockPanel.set_manual_timer(4.0)
 			pass
+		GAMESTATE.POST_SHOW:
+			$distory_overlay.visible = true
+			$FakeSequence.visible = true			
+			$FakeSequence/AIFace.visible = true
+			$FakeSequence/FakeClock.visible = false
+			for line in endSpeech:
+				speakQueue.append(line)
+			speakQueue.append("@end_show")
+			pass
+		GAMESTATE.END:
+			$distory_overlay.visible = false
+			$FakeSequence.visible = true
+			$FakeSequence/AIFace.visible = false
+			$FakeSequence/FakeBG.visible = true
+			$FakeSequence/FakeClock.visible = true
+			$FakeSequence/FakeClock.bbcode_text = "[center]00:00"
+			set_timer_colors(0)			
+	
+func end_show():
+	set_state(GAMESTATE.END)
 
 func clock_start():
 	emit_signal("clock_start")
@@ -353,7 +392,10 @@ func _on_ClockPanel_timer_reset():
 			set_state(GAMESTATE.POST_GAME)
 			pass
 		GAMESTATE.POST_GAME:
-			set_state(GAMESTATE.PRE_GAME)
+			if showOver:
+				set_state(GAMESTATE.POST_SHOW)
+			else:
+				set_state(GAMESTATE.PRE_GAME)
 			pass
 
 func full_request():
@@ -407,4 +449,4 @@ func _on_ClockPanel_show_over():
 	$ShowPanel.set_label("")
 	$ShowPanel2.set_word("Over")
 	$ShowPanel2.set_label("")
-	set_state(GAMESTATE.POST_SHOW)
+	showOver = true
