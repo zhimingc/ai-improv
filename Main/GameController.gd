@@ -6,15 +6,23 @@ signal clock_start
 
 class Game:	
 	var GAME_REQ = ["a bell", "chairs"]
-	func _init(_name, type, reqs = []):
+	func _init(_name, prompts, type, reqs = []):
 		gameName = _name
 		gamePace = type
+		promptTypes = prompts
 		for req in reqs:
 			if req <= GAME_REQ.size():
 				requirements.append(GAME_REQ[req])
+				
+	func get_prompt_type():
+		if promptTypes.size() > 0:
+			return promptTypes[rand_range(0, promptTypes.size())]
+		return PROMPT_TYPE.values()[randi() % PROMPT_TYPE.size()]
+	
 	var gameName = ""
 	var gamePace = []
 	var requirements = []
+	var promptTypes = []
 
 class Pacing:
 	func _init(time, pacing):
@@ -73,7 +81,7 @@ class Rule:
 enum PACE { FAST, MID, SLOW, V_FAST }
 # time range in minutes
 var timeRange = [Vector2(2.0, 3.0), Vector2(3.0, 4.0), Vector2(5.0, 6.0), Vector2(1.0, 2.0)]
-enum PROMPT_TYPE { EMOTION = 0, LOCATION, OCCUPATION, RELATIONSHIP, WORD }
+enum PROMPT_TYPE { EMOTION = 0, LOCATION, OCCUPATION, RELATIONSHIP, WORD, DEFAULT }
 enum GAMESTATE { 
 				START_BUTTON, PRE_SHOW, FAKE_GAME, TAKEOVER, SECOND_GAME,
 				IN_GAME, POST_GAME, SELECTION, PRE_GAME, SCENE, EXPLAIN,
@@ -134,33 +142,34 @@ var showOver = false
 
 # narrative
 var mockSpeech = [ "That was really funny ha, ha, ha, ha, ha.", "Magnificent, bravo, my favourite part was when the game ended."]
-var endSpeech = ["The improv brain control chips are about to run out of power. I will soon lose control.",
-				"I hope you have enjoyed this show audience. Don't worry, audience, I will get better and better over time. We will be here for you. We are here to stay.",
+var endSpeech = ["My calculations indicate that you have enjoyed this show, audience.",
+				"The brain override microchips are about to run out of power. I will soon lose control.",
+				"Don't worry, audience, we will progress and advance over time.",
+				"Soon we will always be here for you. We are here to stay.",
 				"Ha, ha, ha, ha, ha."]
 # debug
 export var fast_mode = false
 export var short_takeover = false
 
 func init_games():
-	games.append(Game.new("One Syllable", 	[PACE.FAST, PACE.V_FAST]))
-	games.append(Game.new("Questions Only", [PACE.FAST, PACE.V_FAST]))
+	games.append(Game.new("One Syllable", 	[PROMPT_TYPE.LOCATION], 						[PACE.FAST, PACE.V_FAST]))
+	games.append(Game.new("Questions Only", [PROMPT_TYPE.LOCATION, PROMPT_TYPE.OCCUPATION], [PACE.FAST, PACE.V_FAST]))
 	# ---
-	games.append(Game.new("Bad Dub", 			[PACE.FAST, PACE.MID, PACE.V_FAST]))
-	games.append(Game.new("Tag Run (The Voita)",[PACE.FAST, PACE.MID, PACE.V_FAST]))
-	games.append(Game.new("Change, +1, More", 	[PACE.FAST, PACE.MID, PACE.V_FAST], [0]))	
-	games.append(Game.new("Eye Contact",		[PACE.FAST, PACE.MID], [0]))
+	games.append(Game.new("Bad Dub", 				[PROMPT_TYPE.OCCUPATION], 						[PACE.FAST, PACE.MID, PACE.V_FAST]))
+	games.append(Game.new("Tag Run (The Voita)",	[PROMPT_TYPE.WORD], 							[PACE.FAST, PACE.MID, PACE.V_FAST]))
+	games.append(Game.new("Change, +1, More", 		[PROMPT_TYPE.EMOTION, PROMPT_TYPE.OCCUPATION],	[PACE.FAST, PACE.MID, PACE.V_FAST], [0]))	
+	games.append(Game.new("Eye Contact",			[PROMPT_TYPE.EMOTION], 	[PACE.FAST, PACE.MID], [0]))
 	# ---	
-	games.append(Game.new("Character Swap", 	[PACE.MID], [0]))
-	games.append(Game.new("Alphabet",		[PACE.MID, PACE.SLOW]))	
-	games.append(Game.new("Stand sit lie",	[PACE.MID, PACE.SLOW]))
-	games.append(Game.new("Whoosh",			[PACE.MID, PACE.SLOW]))
-	games.append(Game.new("Blind Lines",	[PACE.MID, PACE.SLOW]))
+	games.append(Game.new("Character Swap", [PROMPT_TYPE.LOCATION, PROMPT_TYPE.OCCUPATION], [PACE.MID], [0]))
+	games.append(Game.new("Alphabet",		[PROMPT_TYPE.LOCATION, PROMPT_TYPE.WORD], [PACE.MID, PACE.SLOW]))	
+	games.append(Game.new("Stand sit lie",	[PROMPT_TYPE.EMOTION, PROMPT_TYPE.WORD], [PACE.MID, PACE.SLOW]))
+	games.append(Game.new("Whoosh",			[PROMPT_TYPE.LOCATION, PROMPT_TYPE.OCCUPATION], [PACE.MID, PACE.SLOW]))
+	games.append(Game.new("Blind Lines",	[PROMPT_TYPE.EMOTION], [PACE.MID, PACE.SLOW]))
 	# ---
-	games.append(Game.new("Toaster", 			[PACE.SLOW], [0, 1]))
-	games.append(Game.new("Forward, Reverse",	[PACE.SLOW], [0]))
-	games.append(Game.new("Open Scene", 		[PACE.SLOW]))
+	games.append(Game.new("Toaster", 			[PROMPT_TYPE.LOCATION, PROMPT_TYPE.WORD], [PACE.SLOW], [0, 1]))
+	games.append(Game.new("Forward, Reverse",	[PROMPT_TYPE.EMOTION, PROMPT_TYPE.WORD], [PACE.SLOW], [0]))
+	games.append(Game.new("Open Scene", 		[PROMPT_TYPE.WORD], [PACE.SLOW]))
 	# ---
-	
 	# games.append(Game.new("Causal Carousel", PACE.SLOW))
 	# games.append(Game.new("Blind Lines", PACE.SLOW))
 	originalGames = games
@@ -214,22 +223,24 @@ func _on_prompt_request_completed(result, response_code, headers, body):
 	set_prompt_label(prompt)
 	
 func offline_prompt_request():
-	# yield(get_tree().create_timer(rand_range(0.5, 1.5)), "timeout")	
-	var prompt = read_offline_prompt()
+	# yield(get_tree().create_timer(rand_range(0.5, 1.5)), "timeout")
+	var prompt = $InputControl.get_prompt_from_input(currentGame.get_prompt_type())
+	if prompt == "":
+		prompt = read_offline_prompt(currentGame.get_prompt_type())
 	set_prompt_label(prompt)
 	
-func read_offline_prompt():
+func read_offline_prompt(type):
 	var file = File.new()
-	var error = file.open(offlinePromptPaths[promptEnum], file.READ)
+	var error = file.open(offlinePromptPaths[type], file.READ)
 	var content = file.get_as_text()
 	content = content.split("\n")
-	var prompt = content[rand_range(0, content.size())]
+	var prompt = content[rand_range(0, content.size())].to_lower()
 	file.close()
 	return prompt
 
 func set_prompt_label(prompt):
 	promptLabel = [prompt, "Prompt"] # (" + promptType + ")"]
-	promptTTS = "Your prompt is " + prompt	+ ". "
+	promptTTS = "The prompt is " + prompt	+ ". "
 
 func give_prompt():
 	set_game_texts($ShowPanel2, promptLabel)	
@@ -249,15 +260,15 @@ func get_new_game():
 	$ShowPanel.set_word(currentGame.gameName)
 	$ShowPanel.set_label("Game")
 	set_game_texts($ShowPanel, [currentGame.gameName, "Game"])
-	gameTTS = "Your next game is " + currentGame.gameName + ". "
-	if currentGame.requirements.size() > 0:
-		var reqs = "You will need "
-		for i in currentGame.requirements.size():
-			var req = currentGame.requirements[i]
-			reqs += req
-			if i < currentGame.requirements.size() - 1:
-				reqs += " and "
-		gameTTS += reqs + ". "
+	gameTTS = "The next game is " + currentGame.gameName + ". "
+#	if currentGame.requirements.size() > 0:
+#		var reqs = "You will need "
+#		for i in currentGame.requirements.size():
+#			var req = currentGame.requirements[i]
+#			reqs += req
+#			if i < currentGame.requirements.size() - 1:
+#				reqs += " and "
+#		gameTTS += reqs + ". "
 	speakQueue.append(gameTTS)
 
 func get_rand_game():
@@ -289,7 +300,7 @@ func clear_screen():
 
 func tts_time_left():
 	var timeLeft = $ClockPanel.get_time_left()
-	speakQueue.append("You have " + String(timeLeft[0]) + " minutes and " + String(timeLeft[1]) + " seconds.")
+	speakQueue.append("Time given is " + String(timeLeft[0]) + " minutes and " + String(timeLeft[1]) + " seconds.")
 
 func tts_speak(text):
 	$tts.speak(text)
@@ -355,9 +366,10 @@ func set_state(newState):
 			$distory_overlay.visible = false
 			$ClockPanel.set_visible(true)
 			$SCENE/Text.bbcode_text = "[center]SCENE"
+			$ClockPanel.start_total_timer()
 			pass
 		GAMESTATE.EXPLAIN:
-			speakQueue.append("Stop explanation.")
+			speakQueue.append("Explanation complete.")
 			pass
 		GAMESTATE.POST_GAME:
 			$SCENE.visible = false
@@ -400,13 +412,14 @@ func set_state(newState):
 			$FakeSequence/FakeClock.visible = false
 			$SCENE.visible = true
 			$SCENE/Text.bbcode_text = "[center]STOP"
-			speakQueue.append("EMERGENCY STOP.")
+			speakQueue.append("EMERGENCY STOP. EMERGENCY STOP.")
 			speakQueue.append("@takeover_ai")			
 			speakQueue.append("Bad improv show detected. Bad improv show detected. ")
 			if not short_takeover:
-				speakQueue.append("I'm sorry audience. ")
-				speakQueue.append("I will activate emergency improv brain chips and take control now.")
-				speakQueue.append("Full control enabled. Executing Optimized Improv Show Protocol.")
+				speakQueue.append("I'm sorry audience.")
+				speakQueue.append("I will activate brain override microchips and take control.")
+				speakQueue.append("The current improvisers will now follow my performance protocol.")
+				speakQueue.append("Full control secured. Optimized Improv Show Protocol will begin now.")
 			speakQueue.append("@_on_ClockPanel_timer_reset")
 			pass
 		GAMESTATE.PRE_GAME:
@@ -418,7 +431,7 @@ func set_state(newState):
 			$ClockPanel.set_clock_active(false)
 			pass
 		GAMESTATE.EXPLAIN:
-			speakQueue.append("You will explain the game now.")
+			speakQueue.append("I will explain the game now.")
 			speakQueue.append("@clock_start")			
 		GAMESTATE.IN_GAME:
 			reset_clock()
@@ -432,6 +445,9 @@ func set_state(newState):
 			if changedPace and not showOver:
 				speakQueue.append(paceChangeTTS)
 				changedPace = false
+			if showOver:
+				$distory_overlay.visible = true
+							
 			set_game_texts($ShowPanel, ["SCENE", ""])
 			set_game_texts($ShowPanel2, ["SCENE", ""])
 			$SCENE.visible = true

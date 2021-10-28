@@ -1,0 +1,32 @@
+[
+    {
+        "timestamp": "2021-10-28T14:03:00.490Z",
+        "pleaseEnterAnEmotionBelow": "happy",
+        "pleaseEnterALocationBelow": "school",
+        "pleaseEnterAnOccupationBelow": "firefighter",
+        "pleaseEnterARelationshipBelowEgSibling": "sibling",
+        "pleaseEnterAny34SyllableWordsBelow": "monocle",
+        "pleaseEnterAShortSentenceBelowEgThatsAllFolks": "fun in the sun",
+        "pleaseEnterAShortSentenceBelowOptional": "test two"
+    },
+    {
+        "timestamp": "2021-10-28T14:03:43.590Z",
+        "pleaseEnterAnEmotionBelow": "sad",
+        "pleaseEnterALocationBelow": "beach",
+        "pleaseEnterAnOccupationBelow": "teacher",
+        "pleaseEnterARelationshipBelowEgSibling": "best friends",
+        "pleaseEnterAny34SyllableWordsBelow": "sinister",
+        "pleaseEnterAShortSentenceBelowEgThatsAllFolks": "test three",
+        "pleaseEnterAShortSentenceBelowOptional": "all is fair"
+    },
+    {
+        "timestamp": "2021-10-28T14:05:06.138Z",
+        "pleaseEnterAnEmotionBelow": "fear",
+        "pleaseEnterALocationBelow": "office",
+        "pleaseEnterAnOccupationBelow": "bike racer",
+        "pleaseEnterARelationshipBelowEgSibling": "lovers",
+        "pleaseEnterAny34SyllableWordsBelow": "manicure",
+        "pleaseEnterAShortSentenceBelowEgThatsAllFolks": "run and gun",
+        "pleaseEnterAShortSentenceBelowOptional": "joy under the mandate"
+    }
+]

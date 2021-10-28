@@ -67,7 +67,6 @@ Radiologist
 Jeweler
 Lumberjack
 Ventriloquist
-Ornithologist
 Swimmer
 Astronaut
 Police Officer

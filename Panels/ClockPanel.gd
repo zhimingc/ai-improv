@@ -26,6 +26,7 @@ var rulePacings = []
 var currentRulePacing
 var lastGame = false
 var showOver = false
+var totalTimerActive = false
 
 func _ready():
 	controller = get_parent()		
@@ -65,14 +66,18 @@ func debug_end_game():
 func set_clock_active(flag):
 	clockActive = flag
 
+func start_total_timer():
+	totalTimerActive = true
+
 func _process(delta):
 	if (clockActive):
 		currentTime -= delta
-		totalTime -= delta
-		timeElapsed += delta		
+		if totalTimerActive:
+			totalTime -= delta
+			timeElapsed += delta		
 		timerBarObj.update_timebar(currentTime)
 	
-		if not showOver:
+		if not showOver and totalTimerActive:
 			if totalTime <= 0.0:
 				totalTime = 0.0
 				# set_clock_active(false)

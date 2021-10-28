@@ -66,7 +66,6 @@ bend
 stock
 connotation
 soup
-bar
 penicillin
 chop
 cross
@@ -76,7 +75,6 @@ facility
 razor
 scent
 thread
-fan
 author
 fear
 immortal
@@ -97,7 +95,6 @@ replica
 catch
 increase
 live
-do
 cat
 point
 group
@@ -190,7 +187,6 @@ perfume
 protect
 search
 wake
-get
 value
 comb
 flash
@@ -216,7 +212,6 @@ cinema
 public
 electrocardiogram
 knife
-set
 deduce
 tooth
 bedrock
