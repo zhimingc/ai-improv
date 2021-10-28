@@ -26,7 +26,8 @@ func update_pacing_debug():
 	var timeRange = controller.get_node("ClockPanel").get_timeRange(controller.showPace)	
 	$PacingDebug/ShowPace.text = "Show Pace:\n" + str(Controller.PACE.keys()[controller.showPace]) + "\nMin:\n" + str(timeRange.x) + "-" + str(timeRange.y)
 	$PacingDebug/GamePace.text = ""
-
+	$PacingDebug/NewRule.text = "New Rule:\n" + str(controller.newRule)
+	
 	match controller.showPace:
 		Controller.PACE.FAST:
 			$PacingDebug/ShowPace.modulate = Color.green

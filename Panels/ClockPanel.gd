@@ -4,7 +4,7 @@ signal timer_reset
 signal timer_ending
 signal show_over
 
-export var demo = false
+var demo = false
 export var debugTimer = false
 export var debugTime = 15.0
 export var totalTime = 30.0
@@ -22,21 +22,34 @@ var clockActive = false
 var giveWarning = false
 var pacings = []
 var currentPacing
+var rulePacings = []
+var currentRulePacing
 var lastGame = false
 var showOver = false
 
 func _ready():
+	controller = get_parent()		
+	demo = controller.demo
 	if demo:
-		totalTime = 0.5
+		totalTime = 5
 	totalTime *= 60
 	increasePace *= 60
 	currentTime = 10
-	controller = get_parent()	
 	timerBarObj = controller.get_node("TimerBar")
 	timeRange = controller.timeRange
 	init_pace_shift_times()
+	init_rule_paces()
 	currentPacing = pacings.pop_front()
+	currentRulePacing = rulePacings.pop_front()
 	
+func init_rule_paces():
+	rulePacings.append_array(controller.ruleTimings)
+	var accTime = 0.0
+	for pace in rulePacings:
+		var time = totalTime * (pace.timePerc / 100.0)
+		accTime += time
+		pace.timeShift = accTime
+
 func init_pace_shift_times():
 	pacings.append_array(controller.pacing)
 	var accTime = 0.0
@@ -44,6 +57,10 @@ func init_pace_shift_times():
 		var time = totalTime * (pace.timePerc / 100.0)
 		accTime += time
 		pace.timeShift = accTime
+
+func debug_end_game():
+	totalTime = 0.0
+	lastGame = true
 
 func set_clock_active(flag):
 	clockActive = flag
@@ -65,15 +82,19 @@ func _process(delta):
 				showOver = true
 			if not lastGame:
 				check_pace_shift()
+				check_new_rule()
 			if currentTime < warningTime and giveWarning and !showOver:
 				giveWarning = false			
 				emit_signal("timer_ending")
 			
 		if currentTime <= 0.0:
 			reset_timer()
+		
+		update_clock_text()
 
-		currentClockObj.bbcode_text = "[center]" + String(currentTime/60).pad_decimals(0) + ":" + get_padded_time(floor(fmod(currentTime, 60.0)))
-		$TotalTime.bbcode_text = "[center]" + String(totalTime/60).pad_decimals(0) + ":" + get_padded_time(floor(fmod(totalTime, 60.0)))
+func update_clock_text():
+	currentClockObj.bbcode_text = "[center]" + String(currentTime/60).pad_decimals(0) + ":" + get_padded_time(floor(fmod(currentTime, 60.0)))
+	$TotalTime.bbcode_text = "[center]" + String(totalTime/60).pad_decimals(0) + ":" + get_padded_time(floor(fmod(totalTime, 60.0)))
 
 func check_pace_shift():
 	if currentPacing == null:
@@ -83,6 +104,15 @@ func check_pace_shift():
 		if currentPacing == null:
 			return
 		controller.set_pace_state(currentPacing.pace)		
+
+func check_new_rule():
+	if currentRulePacing == null:
+		return
+	if timeElapsed >= currentRulePacing.timeShift:
+		currentRulePacing = rulePacings.pop_front()
+		if currentRulePacing == null:
+			return
+		controller.add_rule()	
 
 func get_padded_time(time):
 	if time < 10:
@@ -100,7 +130,8 @@ func set_manual_timer(time):
 	currentTime = time	
 	timerBarObj.set_new_time(currentTime)
 	set_clock_active(true)
-
+	update_clock_text()
+	
 func set_new_timer(pace):
 	var curTimeRange = get_timeRange(pace)
 	currentTime = rand_range(curTimeRange.x, curTimeRange.y)

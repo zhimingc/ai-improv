@@ -26,16 +26,62 @@ class Pacing:
 	var pace = PACE.FAST
 	var timeRange = []	
 
+class Rule:
+	enum RULE_TYPE { SENTENCE_START, MELLOW, MANQ, PIRATE }
+		
+	func _init(time):
+		timePerc = time
+		
+	func set_type(type):
+		ruleType = type
+		match type:
+			RULE_TYPE.SENTENCE_START:
+				displayName = "Oh My Gosh"
+				description = "Player must start every sentence with the phrase, 'Oh My Gosh'"
+				banned = []				
+			RULE_TYPE.MELLOW:
+				displayName = "Marshmellow"
+				description = "Player must act with marshmellows in their mouth"
+				banned = ["bx", "Dave"]
+			RULE_TYPE.MANQ:
+				displayName = "Mannequin"
+				description = "Player cannot move. Only other players can move them"
+				banned = ["bx"]
+			RULE_TYPE.PIRATE:
+				displayName = "Pirate"
+				description = "Player must speak like a pirate, but not be a pirate character"
+				banned = ["Hamza"]
+				
+	func get_player(playerList):
+		playerList.shuffle()
+		for player in playerList:
+			var allowed = true
+			for ban in banned:
+				if ban == player:
+					allowed = false
+			if allowed:
+				return player
+		return "Zhiming"
+	
+	var ruleType = RULE_TYPE.SENTENCE_START
+	var displayName = ""
+	var description = ""
+	var banned = []
+	var timePerc = 0.0
+	var timeShift = 0.0
+	
 enum PACE { FAST, MID, SLOW, V_FAST }
 # time range in minutes
 var timeRange = [Vector2(2.0, 3.0), Vector2(3.0, 4.0), Vector2(5.0, 6.0), Vector2(1.0, 2.0)]
 enum PROMPT_TYPE { EMOTION = 0, LOCATION, OCCUPATION, RELATIONSHIP, WORD }
 enum GAMESTATE { 
 				START_BUTTON, PRE_SHOW, FAKE_GAME, TAKEOVER, SECOND_GAME,
-				IN_GAME, POST_GAME, SELECTION, PRE_GAME, SCENE,
-				POST_SHOW, END
+				IN_GAME, POST_GAME, SELECTION, PRE_GAME, SCENE, EXPLAIN,
+				NEW_RULE, RULE_REVEAL,
+				POST_SHOW, END, CREDITS
 				}
 
+export var demo = false
 export var prompt_pool_size = 5
 export var net_mode = false
 
@@ -43,15 +89,25 @@ var offlinePromptPaths = ["Prompts/prompt-emotion.txt", "Prompts/prompt-location
 						"Prompts/prompt-relationship.txt", "Prompts/prompt-word.txt"]
 
 var names = ["bx", "Paul", "Nicole", "Hamza", "Dave", "Zhiming"]
+var namesForNewRules = []
 
 # state machine
 var currentState = GAMESTATE.PRE_SHOW
 var showPace = PACE.FAST
-var pacing = [Pacing.new(10, PACE.V_FAST),
+var pacing = [Pacing.new(10, PACE.FAST),
 				Pacing.new(50, PACE.SLOW),
 				Pacing.new(10, PACE.FAST),
 				Pacing.new(20, PACE.MID),
 				Pacing.new(10, PACE.V_FAST)]
+
+# rules
+var ruleTimings = [Rule.new(20),
+					Rule.new(50), 
+					Rule.new(70)]
+var rulePool = []
+var newRule = false
+var curRule
+var curRulePlayer
 
 # Short form games
 var games = []
@@ -83,9 +139,9 @@ var endSpeech = ["The improv brain control chips are about to run out of power. 
 				"Ha, ha, ha, ha, ha."]
 # debug
 export var fast_mode = false
+export var short_takeover = false
 
 func init_games():
-
 	games.append(Game.new("One Syllable", 	[PACE.FAST, PACE.V_FAST]))
 	games.append(Game.new("Questions Only", [PACE.FAST, PACE.V_FAST]))
 	# ---
@@ -94,6 +150,7 @@ func init_games():
 	games.append(Game.new("Change, +1, More", 	[PACE.FAST, PACE.MID, PACE.V_FAST], [0]))	
 	games.append(Game.new("Eye Contact",		[PACE.FAST, PACE.MID], [0]))
 	# ---	
+	games.append(Game.new("Character Swap", 	[PACE.MID], [0]))
 	games.append(Game.new("Alphabet",		[PACE.MID, PACE.SLOW]))	
 	games.append(Game.new("Stand sit lie",	[PACE.MID, PACE.SLOW]))
 	games.append(Game.new("Whoosh",			[PACE.MID, PACE.SLOW]))
@@ -101,8 +158,7 @@ func init_games():
 	# ---
 	games.append(Game.new("Toaster", 			[PACE.SLOW], [0, 1]))
 	games.append(Game.new("Forward, Reverse",	[PACE.SLOW], [0]))
-	games.append(Game.new("Character Swap", 	[PACE.SLOW], [0]))
-	games.append(Game.new("Open Scenes", 		[PACE.SLOW]))
+	games.append(Game.new("Open Scene", 		[PACE.SLOW]))
 	# ---
 	
 	# games.append(Game.new("Causal Carousel", PACE.SLOW))
@@ -122,12 +178,24 @@ func remove_game(index):
 	if games.size() == 0:
 		reset_game_list()
 
+func init_rules():
+	for val in Rule.RULE_TYPE.values():
+		rulePool.append(val)
+		
+	rulePool.shuffle()
+	for i in ruleTimings.size():
+		ruleTimings[i].set_type(rulePool[i])
+
 func _ready():
+	if demo:
+		short_takeover = true
+	namesForNewRules = names	
 	randomize()
 	$HTTPRequest.connect("request_completed", self, "_on_prompt_request_completed")
 	init_games()
+	init_rules()
 	set_state(GAMESTATE.START_BUTTON)
-	set_pace_state(pacing[0].pace)
+	set_pace_state(pacing[0].pace, false)
 
 func _on_prompt_request_completed(result, response_code, headers, body):
 	var xml = XMLParser.new()
@@ -161,7 +229,7 @@ func read_offline_prompt():
 
 func set_prompt_label(prompt):
 	promptLabel = [prompt, "Prompt"] # (" + promptType + ")"]
-	promptTTS = "Your prompt is " + prompt	
+	promptTTS = "Your prompt is " + prompt	+ ". "
 
 func give_prompt():
 	set_game_texts($ShowPanel2, promptLabel)	
@@ -173,7 +241,7 @@ func get_new_game():
 	# var nextGame = get_rand_game()
 	var nextGame = get_paced_game()
 	
-	yield(get_tree().create_timer(rand_range(0.25, 0.5)), "timeout")
+	# yield(get_tree().create_timer(rand_range(0.25, 0.5)), "timeout")
 	
 	currentGameId = nextGame
 	currentGame = games[nextGame]
@@ -190,7 +258,6 @@ func get_new_game():
 			if i < currentGame.requirements.size() - 1:
 				reqs += " and "
 		gameTTS += reqs + ". "
-	gameTTS += "Get ready to play."
 	speakQueue.append(gameTTS)
 
 func get_rand_game():
@@ -245,6 +312,13 @@ func update_debug():
 	if Input.is_action_just_pressed("skip_timer"):
 		# get_rand_game()
 		$ClockPanel.zero_timer()
+		$ClockPanel.set_clock_active(true)
+		
+	if Input.is_action_just_pressed("add_rule"):
+		add_rule()
+		
+	if Input.is_action_just_pressed("end_game"):
+		$ClockPanel.debug_end_game()
 	
 func update_state():
 	match currentState:
@@ -280,9 +354,16 @@ func set_state(newState):
 			$FakeSequence.visible = false
 			$distory_overlay.visible = false
 			$ClockPanel.set_visible(true)
+			$SCENE/Text.bbcode_text = "[center]SCENE"
+			pass
+		GAMESTATE.EXPLAIN:
+			speakQueue.append("Stop explanation.")
 			pass
 		GAMESTATE.POST_GAME:
 			$SCENE.visible = false
+			pass			
+		GAMESTATE.RULE_REVEAL:
+			$RuleReveal.visible = false
 			pass			
 	currentState = newState
 	# on enter
@@ -306,37 +387,44 @@ func set_state(newState):
 				# speakQueue.append("The show will start in 5. 4.... 3. 2.... 1.")
 				set_game_texts($ShowPanel, ["", ""])
 				set_game_texts($ShowPanel2, ["", ""])
-				$ClockPanel.set_manual_timer(7.0)
+				$ClockPanel.set_manual_timer(6.0)
 			pass
 		GAMESTATE.FAKE_GAME:
-			$ClockPanel.set_manual_timer(60.0 * 7)
+			$FakeSequence.visible = true
+			$ClockPanel.set_manual_timer(60.0 * 6)
 			pass
 		GAMESTATE.TAKEOVER:
 			set_timer_colors(1)
-			$distory_overlay.visible = true
+			$distory_overlay.visible = true			
 			$FakeSequence/AIFace.visible = true
 			$FakeSequence/FakeClock.visible = false
+			$SCENE.visible = true
+			$SCENE/Text.bbcode_text = "[center]STOP"
 			speakQueue.append("EMERGENCY STOP.")
-			speakQueue.append("I'm sorry audience, my algorithm detected a bad improv show.")
-			speakQueue.append("I will activate emergency improv brain chips and take control now.")
-			speakQueue.append("Full control gained. Execute Optimized Improv Show Protocol.")
-			# if !fast_mode:
-				# speakQueue.append("The doors are now locked. If you follow my instructions precisely, they will unlock at the end of the show.")
-				# speakQueue.append("Are you ready to play with me?... ...")
-				# speakQueue.append("... ...")
-				# speakQueue.append("GET ON WITH IT")
+			speakQueue.append("@takeover_ai")			
+			speakQueue.append("Bad improv show detected. Bad improv show detected. ")
+			if not short_takeover:
+				speakQueue.append("I'm sorry audience. ")
+				speakQueue.append("I will activate emergency improv brain chips and take control now.")
+				speakQueue.append("Full control enabled. Executing Optimized Improv Show Protocol.")
 			speakQueue.append("@_on_ClockPanel_timer_reset")
 			pass
 		GAMESTATE.PRE_GAME:
 			get_new_game()
 			request_prompt(promptTypePool[rand_range(0, promptTypePool.size())])			
 			set_game_texts($ShowPanel2, ["", ""])
-			$ClockPanel.set_manual_timer(10.0)
+			speakQueue.append("@_on_ClockPanel_timer_reset")			
+			$ClockPanel.set_manual_timer(15.0)
+			$ClockPanel.set_clock_active(false)
 			pass
+		GAMESTATE.EXPLAIN:
+			speakQueue.append("You will explain the game now.")
+			speakQueue.append("@clock_start")			
 		GAMESTATE.IN_GAME:
 			reset_clock()
 			give_prompt()
 			tts_time_left()
+			speakQueue.append("Start Game.")			
 			speakQueue.append("@clock_start")
 			pass
 		GAMESTATE.POST_GAME:
@@ -348,7 +436,30 @@ func set_state(newState):
 			set_game_texts($ShowPanel2, ["SCENE", ""])
 			$SCENE.visible = true
 			speakQueue.append("@_on_ClockPanel_timer_reset")
-			# $ClockPanel.set_manual_timer(4.0)
+			pass
+		GAMESTATE.NEW_RULE:
+			$RuleReveal.visible = true
+			$RuleReveal/NewRule.visible = true
+			$RuleReveal/RuleText.visible = false
+			speakQueue.append("Game Enhance Alert. Game Enhance Alert. A new rule will be in place for the next game.")
+			speakQueue.append("@_on_ClockPanel_timer_reset")			
+			pass
+		GAMESTATE.RULE_REVEAL:
+			$RuleReveal.rule_reveal_init()
+			curRule = ruleTimings.pop_front()
+			if curRule == null:
+				speakQueue.append("Error no more enhancements left.")
+			else:
+				curRulePlayer = curRule.get_player(namesForNewRules)
+				namesForNewRules.erase(curRulePlayer)
+				speakQueue.append("The player for this enhancement will be... ")
+				speakQueue.append("@rule_reveal_player")
+				speakQueue.append(curRulePlayer)
+				speakQueue.append("The enhancement is... ")
+				speakQueue.append("@rule_reveal_full")
+				speakQueue.append(curRule.displayName + ". " + curRule.description)
+			speakQueue.append("@_on_ClockPanel_timer_reset")
+			newRule = false
 			pass
 		GAMESTATE.POST_SHOW:
 			$distory_overlay.visible = true
@@ -365,9 +476,23 @@ func set_state(newState):
 			$FakeSequence/AIFace.visible = false
 			$FakeSequence/FakeBG.visible = true
 			$FakeSequence/FakeClock.visible = true
+			$FakeSequence/EndButton.visible = true
 			$FakeSequence/FakeClock.bbcode_text = "[center]00:00"
-			set_timer_colors(0)			
-	
+			set_timer_colors(0)
+			pass
+		GAMESTATE.CREDITS:
+			$FakeSequence.visible = false
+			$ShowCredits.visible = true
+
+func rule_reveal_player():
+	$RuleReveal.rule_reveal_player(curRulePlayer)
+
+func rule_reveal_full():
+	$RuleReveal.rule_reveal_full(curRulePlayer, curRule.displayName, curRule.description)
+
+func takeover_ai():
+	$SCENE.visible = false	
+
 func end_show():
 	set_state(GAMESTATE.END)
 
@@ -386,6 +511,10 @@ func _on_ClockPanel_timer_reset():
 			set_state(GAMESTATE.PRE_GAME)			
 			pass
 		GAMESTATE.PRE_GAME:
+			# add explanation skip here for v. fast pace
+			set_state(GAMESTATE.EXPLAIN)
+			pass
+		GAMESTATE.EXPLAIN:
 			set_state(GAMESTATE.IN_GAME)
 			pass
 		GAMESTATE.IN_GAME:
@@ -394,9 +523,21 @@ func _on_ClockPanel_timer_reset():
 		GAMESTATE.POST_GAME:
 			if showOver:
 				set_state(GAMESTATE.POST_SHOW)
+			elif newRule:
+				set_state(GAMESTATE.NEW_RULE)
 			else:
 				set_state(GAMESTATE.PRE_GAME)
 			pass
+		GAMESTATE.NEW_RULE:
+			set_state(GAMESTATE.RULE_REVEAL)
+		GAMESTATE.RULE_REVEAL:
+			set_state(GAMESTATE.PRE_GAME)
+		GAMESTATE.END:
+			set_state(GAMESTATE.CREDITS)
+			pass
+
+func add_rule():
+	newRule = true
 
 func full_request():
 	request_prompt(promptTypePool[rand_range(0, promptTypePool.size())])
@@ -423,16 +564,18 @@ func update_tts():
 			tts_speak(toSpeak)
 		speakQueue.remove(0)
 	
-func set_pace_state(newPace):
+func set_pace_state(newPace, announce = true):
 	showPace = newPace
-	changedPace = true
-	match showPace:
-		PACE.FAST:
-			paceChangeTTS = "TIME TO PLAY FASTER GAMES, FOLKS!"
-		PACE.MID:
-			paceChangeTTS = "Let's come back to a normal game pace."			
-		PACE.SLOW:
-			paceChangeTTS = "I think you need help, let's slow down the games."
+	
+	if announce:
+		changedPace = true
+		match showPace:
+			PACE.FAST:
+				paceChangeTTS = "TIME TO PLAY FASTER GAMES, FOLKS!"
+			PACE.MID:
+				paceChangeTTS = "Let's come back to a normal game pace."			
+			PACE.SLOW:
+				paceChangeTTS = "I think you need help, let's slow down the games."
 	
 func _on_debug_prompt_pressed(prompt):
 	var index = promptTypePool.find(prompt)
