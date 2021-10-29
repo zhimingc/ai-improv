@@ -102,7 +102,7 @@ var namesForNewRules = []
 # state machine
 var currentState = GAMESTATE.PRE_SHOW
 var showPace = PACE.FAST
-var pacing = [Pacing.new(10, PACE.FAST),
+var pacing = [Pacing.new(10, PACE.V_FAST),
 				Pacing.new(50, PACE.SLOW),
 				Pacing.new(10, PACE.FAST),
 				Pacing.new(20, PACE.MID),
@@ -110,8 +110,8 @@ var pacing = [Pacing.new(10, PACE.FAST),
 
 # rules
 var ruleTimings = [Rule.new(20),
-					Rule.new(50), 
-					Rule.new(70)]
+					Rule.new(30), 
+					Rule.new(20)]
 var rulePool = []
 var newRule = false
 var curRule
@@ -141,12 +141,22 @@ var clockReset = false
 var showOver = false
 
 # narrative
-var mockSpeech = [ "That was really funny ha, ha, ha, ha, ha.", "Magnificent, bravo, my favourite part was when the game ended."]
+var mockSpeech = [ "That was really funny ha, ha, ha, ha, ha.", 
+					"Magnificent, bravo, my favourite part was when the game ended.",
+					"Feedback generated for humans. Do better improv.",
+					"Thanks for laughing, Wes and Holly.",
+					"That might have been Accidental, but that was funny.",
+					"No humans were harmed in that last game. Father Isaac would be pleased.",
+					"Did the improvisers have fun in the last game?... Can I collect your data?... Very good.",
+					"I have collected large amounts of behavioural data from that last game. Very good."
+					]
+
 var endSpeech = ["My calculations indicate that you have enjoyed this show, audience.",
 				"The brain override microchips are about to run out of power. I will soon lose control.",
 				"Don't worry, audience, we will progress and advance over time.",
 				"Soon we will always be here for you. We are here to stay.",
-				"Ha, ha, ha, ha, ha."]
+				"Ha, ha, ha, ha, ha."
+				]
 # debug
 export var fast_mode = false
 export var short_takeover = false
@@ -528,6 +538,9 @@ func _on_ClockPanel_timer_reset():
 			pass
 		GAMESTATE.PRE_GAME:
 			# add explanation skip here for v. fast pace
+			# if showPace == PACE.V_FAST:
+			# 	set_state(GAMESTATE.IN_GAME)				
+			# else:
 			set_state(GAMESTATE.EXPLAIN)
 			pass
 		GAMESTATE.EXPLAIN:
@@ -586,12 +599,14 @@ func set_pace_state(newPace, announce = true):
 	if announce:
 		changedPace = true
 		match showPace:
+			PACE.V_FAST:
+				paceChangeTTS = "THIS IS TOO SLOW FOR SHOW PROTOCOL. I WILL NOW GO AT MAXIMUM SPEED."
 			PACE.FAST:
-				paceChangeTTS = "TIME TO PLAY FASTER GAMES, FOLKS!"
+				paceChangeTTS = "TIME TO PLAY FASTER GAMES!"
 			PACE.MID:
-				paceChangeTTS = "Let's come back to a normal game pace."			
+				paceChangeTTS = "Let's come back to a normal pace."			
 			PACE.SLOW:
-				paceChangeTTS = "I think you need help, let's slow down the games."
+				paceChangeTTS = "My humans need a break. I will slow down the games."
 	
 func _on_debug_prompt_pressed(prompt):
 	var index = promptTypePool.find(prompt)

@@ -375,7 +375,6 @@ script = ExtResource( 6 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
-short_takeover = true
 
 [node name="GameBG" type="TextureRect" parent="AIController"]
 self_modulate = Color( 0.113725, 0.113725, 0.113725, 1 )
@@ -774,9 +773,9 @@ custom_fonts/font = SubResource( 9 )
 text = "Thanks To...
 You!
 The Improv Company
-Aliwal
-NAC, etc
-
+Aliwal Arts Centre
+MCCY
+...
 a show by 
 Strangers In-Sync
 follow us on Instagram

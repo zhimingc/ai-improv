@@ -148,6 +148,7 @@ func set_new_timer(pace):
 	if timeAfterGame < endGameBufferTime:
 		currentTime = totalTime
 		lastGame = true
+		$ClockText.modulate = Color.crimson
 	
 	set_clock_active(false)
 	giveWarning = true
